@@ -1,0 +1,2 @@
+[default.databases.lanczyki]
+url = "postgresql://login:password@localhost/lancze"
