@@ -3,8 +3,11 @@
 use rocket_dyn_templates::{Template, context};
 
 
-use rocket_db_pools::{Database, Connection};
-use rocket_db_pools::sqlx::{self, Row};
+use rocket_db_pools::{sqlx, Database, Connection};
+// use rocket_db_pools::sqlx::{self, Row};
+
+use rocket::{Rocket, Build, futures};
+use futures::{stream::TryStreamExt, future::TryFutureExt};
 
 
 #[derive(Database)]
@@ -25,22 +28,16 @@ fn index() -> &'static str {
 #[get("/test")]
 async fn index2(mut db: Connection<Lanczyki>) -> Template {
 
-    // let a: Option<String> = sqlx::query("SELECT id, name, zone FROM places")
-    let ids = sqlx::query("SELECT name FROM places where id = 1")
-    .fetch_one(&mut *db).await
-    .and_then(|r| 
-        {
-            print!("duoa");
-            let z= r.try_get(0);
+    let ids = sqlx::query!("SELECT id, name FROM places")
+        .fetch(&mut *db)
+        .map_ok(|record| record.id)
+        .try_collect::<Vec<_>>()
+        .await.ok();
 
-           let x :String =  z.unwrap();
-            print!("-----{}------", x);
-            Ok(x)})
-    .ok();
 
-let dupa = ids.unwrap();
+    let dupa = ids.unwrap();
 
-print!("{}", dupa);
+// print!("{}", dupa);
 
     // let account = sqlx::query("select (1) as id, 'Herp Derpinson' as name")
     // .fetch_one(&mut db)
@@ -66,7 +63,7 @@ print!("{}", dupa);
     // }
 
 
-    Template::render("index", context! { field:  dupa})
+    Template::render("index", context! { places: dupa})
 }
 
 
