@@ -1,2 +1,4 @@
 [default.databases.lanczyki]
 url = "postgresql://login:password@localhost/lancze"
+# To override this you can set a env variable:
+# export ROCKET_DATABASES='{lanczyki={url="postgresql://login:password@localhost/lancze"}}'
