@@ -1,21 +1,21 @@
 #[macro_use] extern crate rocket;
 
 use rocket_dyn_templates::{Template, context};
-
-
 use rocket_db_pools::{sqlx, Database, Connection};
-// use rocket_db_pools::sqlx::{self, Row};
-
 use rocket::{Rocket, Build, futures};
 use futures::{stream::TryStreamExt, future::TryFutureExt};
+use rocket::serde::{Serialize, Deserialize};
 
 
 #[derive(Database)]
 #[database("lanczyki")]
 struct Lanczyki(sqlx::PgPool);
 
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(crate = "rocket::serde")]
 struct Place {
-    _id: i64,
+    id: i64,
     name: String,
     zone: String
 }
@@ -28,42 +28,21 @@ fn index() -> &'static str {
 #[get("/test")]
 async fn index2(mut db: Connection<Lanczyki>) -> Template {
 
-    let ids = sqlx::query!("SELECT id, name, zone FROM places")
+    let places = sqlx::query!("SELECT id, name, zone FROM places")
         .fetch(&mut *db)
-        .map_ok(|r| context! { id: r.id, name: r.name, zone: r.zone})
+        .map_ok(|r|
+
+                    Place {
+                        id: r.id,
+                        name: r.name,
+                        zone: r.zone.unwrap(),
+                    }
+
+        )
         .try_collect::<Vec<_>>()
-        .await.ok();
+        .await.ok().unwrap();
 
-
-    let dupa = ids.unwrap();
-
-// print!("{}", dupa);
-
-    // let account = sqlx::query("select (1) as id, 'Herp Derpinson' as name")
-    // .fetch_one(&mut db)
-    // .await?;
-
-// print!("{}", account);
-
-        // .fetch(&mut *db)
-        // .map_ok(|record| record.id)
-        // .try_collect::<Vec<_>>()
-        // .await.unwrap();
-
-    // println!("{}", ids);
-
-
-    // for row in client.query("SELECT id, name, zone FROM places", &[]).expect("DB SELECT error") {
-    //     let place = Place {
-    //         _id: row.get(0),
-    //         name: row.get(1),
-    //         zone: row.get(2),
-    //     };
-    //     println!("Author {} is from {}", place.name, place.zone);
-    // }
-
-
-    Template::render("index", context! { places: dupa})
+    Template::render("index", context! { places: places})
 }
 
 
