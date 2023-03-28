@@ -28,9 +28,9 @@ fn index() -> &'static str {
 #[get("/test")]
 async fn index2(mut db: Connection<Lanczyki>) -> Template {
 
-    let ids = sqlx::query!("SELECT id, name FROM places")
+    let ids = sqlx::query!("SELECT id, name, zone FROM places")
         .fetch(&mut *db)
-        .map_ok(|record| record.id)
+        .map_ok(|r| context! { id: r.id, name: r.name, zone: r.zone})
         .try_collect::<Vec<_>>()
         .await.ok();
 
