@@ -17,7 +17,8 @@ struct Lanczyki(sqlx::PgPool);
 struct Place {
     id: i64,
     name: String,
-    zone: String
+    zone: String,
+    offer: String,
 }
 
 #[get("/")]
@@ -28,7 +29,15 @@ fn index() -> &'static str {
 #[get("/test")]
 async fn index2(mut db: Connection<Lanczyki>) -> Template {
 
-    let places = sqlx::query!("SELECT id, name, zone FROM places")
+    let places = sqlx::query!("select
+                        offers.id as id,
+                        offer as description,
+                        name,
+                        address,
+                        phone,
+                        zone,
+                        lunch_delivery
+                        from offers join places on offers.place_id = places.id")
         .fetch(&mut *db)
         .map_ok(|r|
 
@@ -36,6 +45,7 @@ async fn index2(mut db: Connection<Lanczyki>) -> Template {
                         id: r.id,
                         name: r.name,
                         zone: r.zone.unwrap(),
+                        offer: r.description.unwrap(),
                     }
 
         )
